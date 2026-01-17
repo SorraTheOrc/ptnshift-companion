@@ -41,21 +41,27 @@ public class PreviewRenderer : IPreviewRenderer
             return;
         }
 
-        const int Width = 960;
-        const int TotalRows = 161; // total rows in the incoming frame
-        const int PreviewRows = 160; // rows to display (skipping the first row)
-        const int SrcStride = Width * 3;
-        const int DstStride = Width * 4;
+        if (CaptureDimensionPresets.TryFromFrameLength(frame.Length, out var dimensions) == false)
+        {
+            Logger.LogWarning("Unexpected frame length {Length}", frame.Length);
+            return;
+        }
+
+        var width = dimensions.Width;
+        var totalRows = dimensions.CaptureHeight; // total rows in the incoming frame
+        var previewRows = dimensions.VisibleHeight; // rows to display (skipping the first row)
+        var srcStride = width * 3;
+        var dstStride = width * 4;
 
         // Convert the RGB24 frame to BGRA32, skipping the first row
-        var rgbaFrame = ArrayPool<byte>.Shared.Rent(960 * 160 * 4);
+        var rgbaFrame = ArrayPool<byte>.Shared.Rent(width * previewRows * 4);
         try
         {
-            for (var row = 1; row < TotalRows; row++)
+            for (var row = 1; row < totalRows; row++)
             {
-                var srcRowStart = row * SrcStride;
-                var dstRowStart = (row - 1) * DstStride;
-                for (var col = 0; col < Width; col++)
+                var srcRowStart = row * srcStride;
+                var dstRowStart = (row - 1) * dstStride;
+                for (var col = 0; col < width; col++)
                 {
                     var srcIndex = srcRowStart + col * 3;
                     var dstIndex = dstRowStart + col * 4;
@@ -71,19 +77,24 @@ public class PreviewRenderer : IPreviewRenderer
 
             lock (BitmapLock)
             {
-                PreviewBitmap ??= new(
-                    new(960, 160),
-                    new(96, 96),
-                    Avalonia.Platform.PixelFormat.Bgra8888,
-                    Avalonia.Platform.AlphaFormat.Premul);
+                if (PreviewBitmap == null
+                    || PreviewBitmap.PixelSize.Width != width
+                    || PreviewBitmap.PixelSize.Height != previewRows)
+                {
+                    PreviewBitmap = new(
+                        new(width, previewRows),
+                        new(96, 96),
+                        Avalonia.Platform.PixelFormat.Bgra8888,
+                        Avalonia.Platform.AlphaFormat.Premul);
+                }
 
                 using var lockedFramebuffer = PreviewBitmap.Lock();
 
                 unsafe
                 {
-                    const int PreviewLength = Width * PreviewRows * 4;
-                    var dstSpan = new Span<byte>(lockedFramebuffer.Address.ToPointer(), PreviewLength);
-                    rgbaFrame.AsSpan(0, PreviewLength).CopyTo(dstSpan);
+                    var previewLength = width * previewRows * 4;
+                    var dstSpan = new Span<byte>(lockedFramebuffer.Address.ToPointer(), previewLength);
+                    rgbaFrame.AsSpan(0, previewLength).CopyTo(dstSpan);
                 }
 
                 // Swap buffers

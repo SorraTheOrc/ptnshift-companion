@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Concurrent;
+using Core.Capturing;
 using SkiaSharp;
 
 namespace Core.Diagnostics;
@@ -15,8 +17,8 @@ public record DiagnosticText(string Value, bool AlwaysDisplay);
 
 public class DiagnosticOutputRenderer : IDiagnosticOutputRenderer
 {
-    private const int Width = 960;
-    private const int Height = 160;
+    private int overlayWidth = CaptureDimensionPresets.Default.Width;
+    private int overlayHeight = CaptureDimensionPresets.Default.VisibleHeight;
 
     private ConcurrentDictionary<Subsystem, DiagnosticText> Texts { get; } = new();
     private SKFont Font { get; } = new(SKTypeface.Default, 16);
@@ -49,10 +51,29 @@ public class DiagnosticOutputRenderer : IDiagnosticOutputRenderer
 
     public event EventHandler? OverlayChanged;
 
-    public SKBitmap DiagnosticOverlayBitmap { get; } =
-        new(Width, Height, SKColorType.Bgra8888, SKAlphaType.Premul);
+    public SKBitmap DiagnosticOverlayBitmap { get; private set; } =
+        new(CaptureDimensionPresets.Default.Width, CaptureDimensionPresets.Default.VisibleHeight, SKColorType.Bgra8888,
+            SKAlphaType.Premul);
 
     public DiagnosticOutputMode Mode { private get; set; }
+
+    public void ResizeOverlay(int width, int height)
+    {
+        if (width == overlayWidth && height == overlayHeight)
+        {
+            return;
+        }
+
+        overlayWidth = width;
+        overlayHeight = height;
+
+        DiagnosticOverlayBitmap.Dispose();
+        DiagnosticOverlayBitmap = new(overlayWidth, overlayHeight, SKColorType.Bgra8888, SKAlphaType.Premul);
+        if (Redraw())
+        {
+            OverlayChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
 
     public bool SetText(Subsystem subsystem, string text, bool? alwaysDisplay)
     {
@@ -90,7 +111,7 @@ public class DiagnosticOutputRenderer : IDiagnosticOutputRenderer
             }
 
             var (posFunc, align) = posConf;
-            var (x, y) = posFunc(Width, Height);
+            var (x, y) = posFunc(overlayWidth, overlayHeight);
             var effectiveText = text.Value.ToUpper();
 
             canvas.DrawText(effectiveText, x, y, align, Font, Paint);

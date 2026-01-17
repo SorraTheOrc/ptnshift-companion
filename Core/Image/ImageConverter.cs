@@ -1,12 +1,13 @@
 using System.Runtime.InteropServices;
+using Core.Capturing;
 using SkiaSharp;
 
 namespace Core.Image;
 
 public interface IImageConverter
 {
-    void ConvertBgra32ToRgb16(ReadOnlySpan<byte> bgraBytes, Memory<byte> rgb16Bytes);
-    void ConvertRgb24ToRgb16(ReadOnlySpan<byte> rgbBytes, Memory<byte> rgb16Bytes);
+    void ConvertBgra32ToRgb16(ReadOnlySpan<byte> bgraBytes, Memory<byte> rgb16Bytes, int width = 960, int height = 160);
+    void ConvertRgb24ToRgb16(ReadOnlySpan<byte> rgbBytes, Memory<byte> rgb16Bytes, int width = 960, int height = 160);
 
     SKData ConvertToData(
         ReadOnlySpan<byte> frame,
@@ -31,7 +32,7 @@ public class ImageConverter : IImageConverter
 {
     private static byte[] XorPattern { get; } = [0xE7, 0xF3, 0xE7, 0xFF];
 
-    public void ConvertBgra32ToRgb16(ReadOnlySpan<byte> bgraBytes, Memory<byte> rgb16Bytes)
+    public void ConvertBgra32ToRgb16(ReadOnlySpan<byte> bgraBytes, Memory<byte> rgb16Bytes, int width = 960, int height = 160)
     {
         ushort ConvertPixelToBgrSwapped16(byte r, byte g, byte b)
         {
@@ -46,17 +47,14 @@ public class ImageConverter : IImageConverter
             );
         }
 
-        const int Width = 960;
-        const int Height = 160;
-
         var outputSpan = rgb16Bytes.Span;
         var dstIndex = 0;
 
-        for (var y = 0; y < Height; y++)
+        for (var y = 0; y < height; y++)
         {
-            for (var x = 0; x < Width; x++)
+            for (var x = 0; x < width; x++)
             {
-                var index = (y * 960 + x) * 4;
+                var index = (y * width + x) * 4;
                 var (r, g, b) = (bgraBytes[index + 2], bgraBytes[index + 1], bgraBytes[index]);
 
                 // Convert directly to final format (with R and B swapped)
@@ -78,7 +76,7 @@ public class ImageConverter : IImageConverter
         }
     }
 
-    public void ConvertRgb24ToRgb16(ReadOnlySpan<byte> rgbBytes, Memory<byte> rgb16Bytes)
+    public void ConvertRgb24ToRgb16(ReadOnlySpan<byte> rgbBytes, Memory<byte> rgb16Bytes, int width = 960, int height = 160)
     {
         // Directly convert to BGR565 (with R and B swapped) in one operation
         static ushort ConvertPixelToBgrSwapped16(byte r, byte g, byte b)
@@ -93,17 +91,14 @@ public class ImageConverter : IImageConverter
             );
         }
 
-        const int Width = 960;
-        const int Height = 160;
-
         var outputSpan = rgb16Bytes.Span;
         var dstIndex = 0;
 
-        for (var y = 0; y < Height; y++)
+        for (var y = 0; y < height; y++)
         {
-            for (var x = 0; x < Width; x++)
+            for (var x = 0; x < width; x++)
             {
-                var index = (y * 960 + x) * 3;
+                var index = (y * width + x) * 3;
                 var (r, g, b) = (rgbBytes[index], rgbBytes[index + 1], rgbBytes[index + 2]);
                 var bgrSwapped16 = ConvertPixelToBgrSwapped16(r, g, b);
 
@@ -136,7 +131,21 @@ public class ImageConverter : IImageConverter
         SKColorType colorType,
         int? width = null, int? height = null)
     {
-        var imageInfo = new SKImageInfo(width ?? 960, height ?? 160, colorType);
+        if (width == null || height == null)
+        {
+            if (CaptureDimensionPresets.TryFromFrameLength(receivedBytes.Length, out var dimensions))
+            {
+                width ??= dimensions.Width;
+                height ??= dimensions.VisibleHeight;
+            }
+            else
+            {
+                width ??= 960;
+                height ??= 160;
+            }
+        }
+
+        var imageInfo = new SKImageInfo(width.Value, height.Value, colorType);
 
         // Get a reference to the first element in the span (zero-copy)
         ref var firstByte = ref MemoryMarshal.GetReference(receivedBytes);

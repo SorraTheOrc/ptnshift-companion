@@ -21,5 +21,6 @@ public interface IDiagnosticOutputRenderer
     event EventHandler? OverlayChanged;
     SKBitmap? DiagnosticOverlayBitmap { get; }
     DiagnosticOutputMode Mode { set; }
+    void ResizeOverlay(int width, int height);
     bool SetText(Subsystem part, string text, bool? alwaysDisplay = null);
 }

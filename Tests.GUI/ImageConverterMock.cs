@@ -8,13 +8,13 @@ public class ImageConverterMock : IImageConverter
     public byte[] Input { get; set; } = null!;
     public byte[] ExpectedOutput { get; set; } = null!;
 
-    public void ConvertBgra32ToRgb16(ReadOnlySpan<byte> bgraBytes, Memory<byte> rgb16Bytes)
+    public void ConvertBgra32ToRgb16(ReadOnlySpan<byte> bgraBytes, Memory<byte> rgb16Bytes, int width = 960, int height = 160)
     {
         Input = bgraBytes.ToArray();
         ExpectedOutput.CopyTo(rgb16Bytes);
     }
 
-    public void ConvertRgb24ToRgb16(ReadOnlySpan<byte> bgraBytes, Memory<byte> rgb16Bytes)
+    public void ConvertRgb24ToRgb16(ReadOnlySpan<byte> bgraBytes, Memory<byte> rgb16Bytes, int width = 960, int height = 160)
     {
         ConvertBgra32ToRgb16(bgraBytes, rgb16Bytes);
     }

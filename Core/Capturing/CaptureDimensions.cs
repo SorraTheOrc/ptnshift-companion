@@ -1,0 +1,37 @@
+using System.Collections.Immutable;
+using System.Linq;
+
+namespace Core.Capturing;
+
+public record CaptureDimensions(int Width, int VisibleHeight)
+{
+    public int CaptureHeight => VisibleHeight + 1;
+    public int FrameByteLength => Width * CaptureHeight * 3;
+    public override string ToString() => $"{Width}x{VisibleHeight}";
+}
+
+public static class CaptureDimensionPresets
+{
+    public static CaptureDimensions Small { get; } = new(960, 120);
+    public static CaptureDimensions Large { get; } = new(1280, 160);
+
+    public static CaptureDimensions Default { get; } = Large;
+
+    public static ImmutableArray<CaptureDimensions> All { get; } =
+        [Small, Large];
+
+    public static bool TryFromFrameLength(int length, out CaptureDimensions dimensions)
+    {
+        var match = All.FirstOrDefault(x =>
+            x.FrameByteLength == length
+            || x.Width * x.CaptureHeight * 4 == length);
+        if (match == default)
+        {
+            dimensions = Default;
+            return false;
+        }
+
+        dimensions = match;
+        return true;
+    }
+}

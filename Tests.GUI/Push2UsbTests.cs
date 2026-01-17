@@ -69,7 +69,10 @@ public class Push2UsbTests
             .Setup(x => x.EventSource)
             .Returns(() => EventSourceMock);
         DiagnosticOutputRendererMock.Setup(
-            x => x.SetText(It.IsAny<Subsystem>(), It.IsAny<string>(), It.IsAny<bool?>()));
+            x => x.SetText(It.IsAny<Subsystem>(), It.IsAny<string>(), It.IsAny<bool?>()))
+            .Returns(true);
+        DiagnosticOutputRendererMock.Setup(
+            x => x.ResizeOverlay(It.IsAny<int>(), It.IsAny<int>()));
 
         // The most common situation
         InitSetup.Verifiable(Times.Once);
@@ -95,7 +98,10 @@ public class Push2UsbTests
         DiagnosticOutputRendererMock.Reset();
         DiagnosticOutputRendererMock
             .Setup(x => x.SetText(Subsystem.FrameTransmission, "Connected", true))
+            .Returns(true)
             .Verifiable(Times.Once);
+        DiagnosticOutputRendererMock
+            .Setup(x => x.ResizeOverlay(It.IsAny<int>(), It.IsAny<int>()));
 
         var result = Sut.Connect();
 
@@ -276,10 +282,14 @@ public class Push2UsbTests
         DiagnosticOutputRendererMock.Reset();
         DiagnosticOutputRendererMock
             .Setup(x => x.SetText(Subsystem.FrameTransmission, "Connected", true))
+            .Returns(true)
             .Verifiable(Times.Once);
         DiagnosticOutputRendererMock
             .Setup(x => x.SetText(Subsystem.FrameTransmission, "Streaming", null))
+            .Returns(true)
             .Verifiable(Times.Once);
+        DiagnosticOutputRendererMock
+            .Setup(x => x.ResizeOverlay(It.IsAny<int>(), It.IsAny<int>()));
         Sut.Connect();
         EventSourceMock.InvokeFrameCaptured(FrameCaptureType.Region, new(bgraBytes));
 

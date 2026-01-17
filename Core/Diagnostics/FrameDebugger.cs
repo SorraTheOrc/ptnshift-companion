@@ -1,3 +1,4 @@
+using System;
 using Core.Capturing;
 
 namespace Core.Diagnostics;
@@ -11,7 +12,9 @@ public interface IFrameDebugger
 public class FrameDebugger : IFrameDebugger
 {
     private Lock FrameDumpLock { get; } = new();
-    private byte[] LastFrameData { get; } = new byte[960 * 161 * 3];
+    private byte[] LastFrameData { get; set; } = Array.Empty<byte>();
+    private int lastFrameWidth = CaptureDimensionPresets.Default.Width;
+    private int lastFrameHeight = CaptureDimensionPresets.Default.CaptureHeight;
 
     public event Action<string> FrameDumpWritten = delegate { };
 
@@ -29,6 +32,17 @@ public class FrameDebugger : IFrameDebugger
     {
         lock (FrameDumpLock)
         {
+            if (CaptureDimensionPresets.TryFromFrameLength(frame.Length, out var dimensions))
+            {
+                lastFrameWidth = dimensions.Width;
+                lastFrameHeight = dimensions.CaptureHeight;
+            }
+
+            if (LastFrameData.Length != frame.Length)
+            {
+                LastFrameData = new byte[frame.Length];
+            }
+
             frame.CopyTo(LastFrameData);
         }
     }
@@ -41,14 +55,19 @@ public class FrameDebugger : IFrameDebugger
 
         lock (FrameDumpLock)
         {
-            for (var i = 0; i < LastFrameData.Length; i += 4)
+            if (LastFrameData.Length == 0)
+            {
+                return;
+            }
+
+            for (var i = 0; i < LastFrameData.Length; i += 3)
             {
                 var r = LastFrameData[i + 2];
                 var g = LastFrameData[i + 1];
                 var b = LastFrameData[i];
                 writer.Write($"0x{r:X2}{g:X2}{b:X2} ");
 
-                if ((i / 4 + 1) % 960 == 0)
+                if ((i / 3 + 1) % lastFrameWidth == 0)
                 {
                     writer.WriteLine();
                 }

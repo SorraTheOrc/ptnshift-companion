@@ -39,7 +39,18 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty] private int captureXParsed = 533;
     [ObservableProperty] private int captureYParsed = 794;
     [ObservableProperty] private int captureFrameRateParsed = 30;
-    [ObservableProperty] private CaptureConfiguration captureConfiguration = new(0, 533, 794, 960, 161, 25);
+    [ObservableProperty] private CaptureConfiguration captureConfiguration = new(0, 533, 794,
+        CaptureDimensionPresets.Default.Width,
+        CaptureDimensionPresets.Default.CaptureHeight,
+        25)
+    {
+        CaptureDimensions = CaptureDimensionPresets.Default
+    };
+    public IReadOnlyCollection<CaptureDimensions> CaptureDimensionOptions { get; } =
+        CaptureDimensionPresets.All;
+    [ObservableProperty] private CaptureDimensions selectedCaptureDimensions = CaptureDimensionPresets.Default;
+    public int VisibleCaptureWidth => CaptureConfiguration.CaptureDimensions.Width;
+    public int VisibleCaptureHeight => CaptureConfiguration.CaptureDimensions.VisibleHeight;
     [ObservableProperty] private WriteableBitmap? imageSource;
 
     private CancellationTokenSource propertyUpdateCts = new();
@@ -127,6 +138,16 @@ public partial class MainWindowViewModel : ViewModelBase
 
                 UpdateCaptureConfiguration(CaptureConfiguration with {DisplayId = SelectedDisplayInfo!.Id});
 
+                break;
+            }
+            case nameof(SelectedCaptureDimensions):
+            {
+                UpdateCaptureConfiguration(CaptureConfiguration with
+                {
+                    Width = SelectedCaptureDimensions.Width,
+                    Height = SelectedCaptureDimensions.CaptureHeight,
+                    CaptureDimensions = SelectedCaptureDimensions
+                });
                 break;
             }
             case nameof(CaptureX):
@@ -231,6 +252,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
 
         CaptureConfiguration = newConfiguration;
+        SelectedCaptureDimensions = CaptureConfiguration.CaptureDimensions;
 
         DelayOperation(
             () => Dispatcher.UIThread.Invoke(() =>
@@ -244,6 +266,12 @@ public partial class MainWindowViewModel : ViewModelBase
         DelayOperation(
             () => CaptureService.SetConfiguration(CaptureConfiguration),
             applicationDelayMs ?? CaptureService.GetConfigurationChangeDelayMs(CaptureConfiguration), ref cfgUpdateCts);
+    }
+
+    partial void OnCaptureConfigurationChanged(CaptureConfiguration value)
+    {
+        OnPropertyChanged(nameof(VisibleCaptureWidth));
+        OnPropertyChanged(nameof(VisibleCaptureHeight));
     }
 
     private void SetSelectedDisplayInfo(bool? useFallback = null)

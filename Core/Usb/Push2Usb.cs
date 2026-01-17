@@ -1,3 +1,4 @@
+using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
@@ -10,9 +11,7 @@ namespace Core.Usb;
 
 public sealed class Push2Usb : IPush2Usb
 {
-    private const int ChunkSize = 512 * 128; // 40960; // 512 * 64;
-    private const int OverlayWidth = 960;
-    private const int OverlayHeight = 160;
+    private const int ChunkSize = 512 * 40;
 
     internal static ReadOnlyMemory<byte> FrameHeader { get; } = new([
         0xFF, 0xCC, 0xAA, 0x88,
@@ -31,13 +30,16 @@ public sealed class Push2Usb : IPush2Usb
 
     private Lock SyncRoot { get; } = new();
     private Lock BufferLock { get; } = new();
-    private byte[] CroppedFrameBuffer { get; } = new byte[960 * 160 * 3];
-    private byte[] LastCroppedRgbFrame { get; } = new byte[960 * 160 * 3];
+    private byte[] CroppedFrameBuffer { get; set; } = Array.Empty<byte>();
+    private byte[] LastCroppedRgbFrame { get; set; } = Array.Empty<byte>();
+    private CaptureDimensions CurrentDimensions { get; set; } = CaptureDimensionPresets.Default;
+    private int OverlayWidth { get; set; } = CaptureDimensionPresets.Default.Width;
+    private int OverlayHeight { get; set; } = CaptureDimensionPresets.Default.VisibleHeight;
     private volatile bool isFrameBeingSent;
 
     // Send buffer and conversion buffer are swapped to prevent buffer overrun
-    private byte[] SendBuffer { get; set; } = new byte[2048 * 160];
-    private byte[] ConversionBuffer { get; set; } = new byte[2048 * 160];
+    private byte[] SendBuffer { get; set; } = Array.Empty<byte>();
+    private byte[] ConversionBuffer { get; set; } = Array.Empty<byte>();
 
     private IntPtr UsbContext { get; set; }
     private IntPtr PushDevice { get; set; }
@@ -49,6 +51,32 @@ public sealed class Push2Usb : IPush2Usb
     private IDiagnosticOutputRenderer DiagnosticOutputRenderer { get; }
 
     public bool IsConnected { get; private set; }
+
+    private static int GetRowStride(int width) => width * 2 + 128;
+    private int GetFrameLength() => GetRowStride(OverlayWidth) * OverlayHeight;
+    private void EnsureBuffers(CaptureDimensions dimensions)
+    {
+        if (dimensions == CurrentDimensions
+            && CroppedFrameBuffer.Length > 0
+            && LastCroppedRgbFrame.Length > 0
+            && SendBuffer.Length > 0)
+        {
+            return;
+        }
+
+        CurrentDimensions = dimensions;
+        OverlayWidth = dimensions.Width;
+        OverlayHeight = dimensions.VisibleHeight;
+
+        var pixelBytes = OverlayWidth * OverlayHeight * 3;
+        CroppedFrameBuffer = new byte[pixelBytes];
+        LastCroppedRgbFrame = new byte[pixelBytes];
+        var frameLength = GetFrameLength();
+        SendBuffer = new byte[frameLength];
+        ConversionBuffer = new byte[frameLength];
+
+        DiagnosticOutputRenderer.ResizeOverlay(OverlayWidth, OverlayHeight);
+    }
 
     public Push2Usb(
         ILogger<Push2Usb> logger,
@@ -133,6 +161,8 @@ public sealed class Push2Usb : IPush2Usb
         }
 
         Streamer.EventSource.RegionFrameCaptured += OnRegionFrameReceived;
+
+        EnsureBuffers(CurrentDimensions);
 
         DiagnosticOutputRenderer.SetText(Subsystem.FrameTransmission, "Connected", alwaysDisplay: true);
         return IsConnected = true;
@@ -252,10 +282,25 @@ public sealed class Push2Usb : IPush2Usb
         {
             lock (BufferLock)
             {
-                Debug.Assert(rgbFrame.Length >= 960 * 161 * 3);
-                var croppedFrame = rgbFrame[(960 * 3)..];
+                if (CaptureDimensionPresets.TryFromFrameLength(rgbFrame.Length, out var dimensions) == false)
+                {
+                    Logger.LogWarning("Unexpected frame length {Length}", rgbFrame.Length);
+                    return;
+                }
+
+                EnsureBuffers(dimensions);
+
+                var rowLength = dimensions.Width * 3;
+                var expectedLength = dimensions.Width * dimensions.VisibleHeight * 3;
+                if (rgbFrame.Length < rowLength + expectedLength)
+                {
+                    Logger.LogWarning("Frame too small for expected dimensions {Dimensions}", dimensions);
+                    return;
+                }
+
+                var croppedFrame = rgbFrame.Slice(rowLength, expectedLength);
                 croppedFrame.CopyTo(LastCroppedRgbFrame);
-                ConvertBuffer(croppedFrame);
+                ConvertBuffer(croppedFrame, dimensions);
             }
 
             SendSendBuffer();
@@ -273,17 +318,26 @@ public sealed class Push2Usb : IPush2Usb
     {
         lock (BufferLock)
         {
-            ConvertBuffer(LastCroppedRgbFrame.AsSpan());
+            if (LastCroppedRgbFrame.Length == 0)
+            {
+                return;
+            }
+
+            ConvertBuffer(LastCroppedRgbFrame.AsSpan(), CurrentDimensions);
         }
 
         SendSendBuffer();
     }
 
-    private void ConvertBuffer(ReadOnlySpan<byte> rgbFrame)
+    private void ConvertBuffer(ReadOnlySpan<byte> rgbFrame, CaptureDimensions dimensions)
     {
         rgbFrame.CopyTo(CroppedFrameBuffer);
         BlendOverlay(CroppedFrameBuffer);
-        ImageConverter.ConvertRgb24ToRgb16(CroppedFrameBuffer, ConversionBuffer);
+        ImageConverter.ConvertRgb24ToRgb16(
+            CroppedFrameBuffer,
+            ConversionBuffer,
+            dimensions.Width,
+            dimensions.VisibleHeight);
         (SendBuffer, ConversionBuffer) = (ConversionBuffer, SendBuffer);
     }
 
@@ -322,6 +376,11 @@ public sealed class Push2Usb : IPush2Usb
     private void SendSendBuffer()
     {
         if (isFrameBeingSent)
+        {
+            return;
+        }
+
+        if (SendBuffer.Length == 0)
         {
             return;
         }
