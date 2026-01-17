@@ -25,7 +25,7 @@ public class CaptureDimensionsTests
     {
         var length = CaptureDimensionPresets.Small.Width
                      * CaptureDimensionPresets.Small.CaptureHeight
-                     * 4;
+                     * CaptureDimensionPresets.BgraBytesPerPixel;
 
         CaptureDimensionPresets.TryFromFrameLength(length, out var dimensions).ShouldBeTrue();
         dimensions.ShouldBe(CaptureDimensionPresets.Small);

@@ -11,6 +11,7 @@ namespace Core.Usb;
 
 public sealed class Push2Usb : IPush2Usb
 {
+    // 512-byte USB packet size * 40 keeps both supported frame lengths divisible
     private const int ChunkSize = 512 * 40;
 
     internal static ReadOnlyMemory<byte> FrameHeader { get; } = new([
@@ -375,12 +376,7 @@ public sealed class Push2Usb : IPush2Usb
 
     private void SendSendBuffer()
     {
-        if (isFrameBeingSent)
-        {
-            return;
-        }
-
-        if (SendBuffer.Length == 0)
+        if (isFrameBeingSent || SendBuffer.Length == 0)
         {
             return;
         }

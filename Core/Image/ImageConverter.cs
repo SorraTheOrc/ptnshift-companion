@@ -6,8 +6,8 @@ namespace Core.Image;
 
 public interface IImageConverter
 {
-    void ConvertBgra32ToRgb16(ReadOnlySpan<byte> bgraBytes, Memory<byte> rgb16Bytes, int width = 960, int height = 160);
-    void ConvertRgb24ToRgb16(ReadOnlySpan<byte> rgbBytes, Memory<byte> rgb16Bytes, int width = 960, int height = 160);
+    void ConvertBgra32ToRgb16(ReadOnlySpan<byte> bgraBytes, Memory<byte> rgb16Bytes, int width = CaptureDimensionPresets.DefaultWidth, int height = CaptureDimensionPresets.DefaultVisibleHeight);
+    void ConvertRgb24ToRgb16(ReadOnlySpan<byte> rgbBytes, Memory<byte> rgb16Bytes, int width = CaptureDimensionPresets.DefaultWidth, int height = CaptureDimensionPresets.DefaultVisibleHeight);
 
     SKData ConvertToData(
         ReadOnlySpan<byte> frame,
@@ -32,7 +32,7 @@ public class ImageConverter : IImageConverter
 {
     private static byte[] XorPattern { get; } = [0xE7, 0xF3, 0xE7, 0xFF];
 
-    public void ConvertBgra32ToRgb16(ReadOnlySpan<byte> bgraBytes, Memory<byte> rgb16Bytes, int width = 960, int height = 160)
+    public void ConvertBgra32ToRgb16(ReadOnlySpan<byte> bgraBytes, Memory<byte> rgb16Bytes, int width = CaptureDimensionPresets.DefaultWidth, int height = CaptureDimensionPresets.DefaultVisibleHeight)
     {
         ushort ConvertPixelToBgrSwapped16(byte r, byte g, byte b)
         {
@@ -76,7 +76,7 @@ public class ImageConverter : IImageConverter
         }
     }
 
-    public void ConvertRgb24ToRgb16(ReadOnlySpan<byte> rgbBytes, Memory<byte> rgb16Bytes, int width = 960, int height = 160)
+    public void ConvertRgb24ToRgb16(ReadOnlySpan<byte> rgbBytes, Memory<byte> rgb16Bytes, int width = CaptureDimensionPresets.DefaultWidth, int height = CaptureDimensionPresets.DefaultVisibleHeight)
     {
         // Directly convert to BGR565 (with R and B swapped) in one operation
         static ushort ConvertPixelToBgrSwapped16(byte r, byte g, byte b)
@@ -140,8 +140,8 @@ public class ImageConverter : IImageConverter
             }
             else
             {
-                width ??= 960;
-                height ??= 160;
+                width ??= CaptureDimensionPresets.DefaultWidth;
+                height ??= CaptureDimensionPresets.DefaultVisibleHeight;
             }
         }
 
