@@ -8,7 +8,7 @@ namespace GUI;
 // ReSharper disable once ClassNeverInstantiated.Global
 public sealed class Program
 {
-    private static SerilogSink SerilogSink { get; set; } = null!;
+    private static SerilogSink LogSink { get; set; } = null!;
 
     // Initialization code. Don't use any Avalonia, third-party APIs or any
     // SynchronizationContext-reliant code before AppMain is called: things aren't initialized
@@ -16,7 +16,13 @@ public sealed class Program
     [STAThread]
     public static void Main(string[] args)
     {
-        SerilogSink = new();
+        LogSink = new();
+        var version = typeof(Program).Assembly.GetName().Version?.ToString() ?? "unknown";
+        var logFilePath = SerilogSink.LogFilePath;
+        LogSink.Logger.Information(
+            "Starting PTNSHIFT Companion v{Version} (log file: {LogFilePath})",
+            version,
+            logFilePath);
         try
         {
             BuildAvaloniaApp()
@@ -24,7 +30,7 @@ public sealed class Program
         }
         catch (Exception ex)
         {
-            SerilogSink.Logger.Fatal(ex, "Application crash");
+            LogSink.Logger.Fatal(ex, "Application crash");
         }
     }
 
@@ -34,8 +40,8 @@ public sealed class Program
         AppBuilder.Configure<App>()
             .UsePlatformDetect()
             .WithInterFont()
-            .LogToSerilog(SerilogSink);
-}
+            .LogToSerilog(LogSink);
+    }
 
 public static class LogExtensions
 {
@@ -65,8 +71,17 @@ public class SerilogSink : ILogSink
     {
         get
         {
-            var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            return System.IO.Path.Combine(appData, "PtnshiftCompanion", "ptnshift.log");
+            var basePath = OperatingSystem.IsMacOS()
+                ? System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.Personal),
+                    "Library",
+                    "Application Support",
+                    "PtnshiftCompanion")
+                : System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "PtnshiftCompanion");
+
+            return System.IO.Path.Combine(basePath, "ptnshift.log");
         }
     }
 
