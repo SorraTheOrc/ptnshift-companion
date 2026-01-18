@@ -71,8 +71,17 @@ public class SerilogSink : ILogSink
     {
         get
         {
-            var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            return System.IO.Path.Combine(appData, "PtnshiftCompanion", "ptnshift.log");
+            var basePath = OperatingSystem.IsMacOS()
+                ? System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.Personal),
+                    "Library",
+                    "Application Support",
+                    "PtnshiftCompanion")
+                : System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "PtnshiftCompanion");
+
+            return System.IO.Path.Combine(basePath, "ptnshift.log");
         }
     }
 
