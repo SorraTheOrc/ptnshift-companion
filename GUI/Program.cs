@@ -17,6 +17,11 @@ public sealed class Program
     public static void Main(string[] args)
     {
         SerilogSink = new();
+        var version = typeof(Program).Assembly.GetName().Version?.ToString() ?? "unknown";
+        SerilogSink.Logger.Information(
+            "Starting PTNSHIFT Companion v{Version} (log file: {LogFilePath})",
+            version,
+            SerilogSink.LogFilePath);
         try
         {
             BuildAvaloniaApp()
