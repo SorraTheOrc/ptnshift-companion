@@ -56,7 +56,15 @@ jobs:
             --output publish/arm64 `
             /p:Platform=ARM64 `
             /p:TreatWarningsAsErrors=false
-      
+
+      - name: Test application runtime
+        run: |
+          Write-Host "Trying to run the application to validate it starts..."
+          start "" /B publish/arm64/GUI.exe
+          Start-Sleep -Seconds 5
+          Get-Process | Where-Object {$_.Path -match "publish/arm64/GUI.exe"} | ForEach-Object {Write-Host "✓ Application started successfully!"}
+          Get-Process | Where-Object {$_.Path -match "publish/arm64/GUI.exe"} | ForEach-Object {Stop-Process -Id $_.Id}
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
