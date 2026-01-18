@@ -8,7 +8,7 @@ namespace GUI;
 // ReSharper disable once ClassNeverInstantiated.Global
 public sealed class Program
 {
-    private static SerilogSink SerilogSink { get; set; } = null!;
+    private static SerilogSink LogSink { get; set; } = null!;
 
     // Initialization code. Don't use any Avalonia, third-party APIs or any
     // SynchronizationContext-reliant code before AppMain is called: things aren't initialized
@@ -16,9 +16,9 @@ public sealed class Program
     [STAThread]
     public static void Main(string[] args)
     {
-        SerilogSink = new();
+        LogSink = new();
         var version = typeof(Program).Assembly.GetName().Version?.ToString() ?? "unknown";
-        SerilogSink.Logger.Information(
+        LogSink.Logger.Information(
             "Starting PTNSHIFT Companion v{Version} (log file: {LogFilePath})",
             version,
             SerilogSink.LogFilePath);
@@ -39,8 +39,8 @@ public sealed class Program
         AppBuilder.Configure<App>()
             .UsePlatformDetect()
             .WithInterFont()
-            .LogToSerilog(SerilogSink);
-}
+            .LogToSerilog(LogSink);
+    }
 
 public static class LogExtensions
 {
