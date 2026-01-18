@@ -16,14 +16,14 @@ jobs:
       
       - name: Setup . NET
         uses: actions/setup-dotnet@v4
-        with: 
+        with:
           dotnet-version: '9.0.x'
       
-      - name:  Setup MSBuild
-        uses:  microsoft/setup-msbuild@v2
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
       
-      - name: Build native WinScreenStream DLL (ARM64)
-        run: msbuild WinScreenStream.sln -p:Configuration=Release -p:Platform=ARM64
+      - name:  Build native WinScreenStream DLL (ARM64)
+        run: msbuild WinScreenStream/WinScreenStream.vcxproj -p:Configuration=Release -p:Platform=ARM64
         
       - name:  Verify DLL was built
         run: |
@@ -48,9 +48,9 @@ jobs:
             -p:Platform=arm64 `
             /p:TreatWarningsAsErrors=false
       
-      - name: Upload artifact
-        uses:  actions/upload-artifact@v4
-        with: 
+      - name:  Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
           name: ptnshift-companion-windows-arm64
           path: publish/arm64/
           retention-days: 30
