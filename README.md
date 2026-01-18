@@ -8,7 +8,25 @@ While the primary purpose of this app is to move the PTNSHIFT UI to a Push devic
 
 ## Binaries
 
-For convenience, builds are available at https://bergius.org/ptnshift.
+For convenience, builds are available at https://bergius.org/ptnshift (direct download for Windows and macOS).
+
+## Building
+
+### Windows
+
+1. Install the [.NET SDK 9.0](https://dotnet.microsoft.com/en-us/download) and the [Visual Studio Build Tools](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio) (for the native `WinScreenStream` library).
+2. From PowerShell in the repo root, run:
+   ```
+   .\build-win.ps1
+   ```
+   The script builds the native library and then publishes Release Windows configurations for both `win-x64` and `win-arm64` into `publish\x64` and `publish\arm64`.
+
+### macOS
+
+Use the existing helper to produce universal binaries:
+```
+./build-mac.sh
+```
 
 ## Licensing
 
