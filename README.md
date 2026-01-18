@@ -33,7 +33,8 @@ Use the existing helper to produce universal binaries:
 The app writes logs both to the console (when launched from a terminal) and to a rolling log file:
 
 - **Windows (including ARM64 builds):** `%AppData%\PtnshiftCompanion\ptnshift.log`
-- **macOS/Linux:** `~/.config/PtnshiftCompanion/ptnshift.log`
+- **macOS:** `~/Library/Application Support/PtnshiftCompanion/ptnshift.log`
+- **Linux:** `~/.config/PtnshiftCompanion/ptnshift.log`
 
 A startup entry is written every time the app launches, so if nothing appears to happen after running the downloaded artifact you can open the log file to see whether the app started and any errors that occurred. From within the app, the **Log** menu option opens the folder containing the log file.
 

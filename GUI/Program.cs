@@ -18,10 +18,11 @@ public sealed class Program
     {
         LogSink = new();
         var version = typeof(Program).Assembly.GetName().Version?.ToString() ?? "unknown";
+        var logFilePath = SerilogSink.LogFilePath;
         LogSink.Logger.Information(
             "Starting PTNSHIFT Companion v{Version} (log file: {LogFilePath})",
             version,
-            SerilogSink.LogFilePath);
+            logFilePath);
         try
         {
             BuildAvaloniaApp()
@@ -29,7 +30,7 @@ public sealed class Program
         }
         catch (Exception ex)
         {
-            SerilogSink.Logger.Fatal(ex, "Application crash");
+            LogSink.Logger.Fatal(ex, "Application crash");
         }
     }
 
