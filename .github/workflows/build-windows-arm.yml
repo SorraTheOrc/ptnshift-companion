@@ -4,26 +4,26 @@ on:
   push:
     branches: 
       - main
-  workflow_dispatch:
+  workflow_dispatch: 
 
 jobs:
-  build:
+  build: 
     runs-on: windows-latest
     
     steps: 
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Setup .NET
+      - name:  Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.0.x'
       
       - name: Restore dependencies
-        run: dotnet restore
+        run:  dotnet restore PtnshiftCompanion.sln
       
-      - name: Build Windows ARM64
-        run: |
+      - name:  Build Windows ARM64
+        run:  |
           dotnet publish GUI/GUI.csproj `
             --configuration "Release Windows" `
             --framework net9.0 `
