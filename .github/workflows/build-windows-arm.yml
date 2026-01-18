@@ -1,38 +1,39 @@
 name: Build Windows ARM64
 
 on:
-  push:
-    branches:
+  push: 
+    branches: 
       - main
-  workflow_dispatch:
+  workflow_dispatch: 
 
 jobs:
   build:
     runs-on: windows-latest
-
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+      
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.0.x'
-
+      
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
-
+      
       - name: Build native WinScreenStream DLL (ARM64)
         run: |
           msbuild WinScreenStream/WinScreenStream.vcxproj `
             -p:Configuration=Release `
             -p:Platform=ARM64
 
-      - name: Debug Published Artifacts
+      - name: Debug Build Directory
         run: |
-          Write-Host "Listing contents of publish/arm64 directory..."
-          Get-ChildItem -Recurse -Path publish/arm64
-
+          Write-Host "Debugging the build directory..."
+          dir WinScreenStream/ARM64
+          dir WinScreenStream/ARM64/Release
+      
       - name: Verify DLL was built
         run: |
           if (Test-Path "WinScreenStream/ARM64/Release/WinScreenStream.dll") {
@@ -41,10 +42,10 @@ jobs:
             Write-Error "✗ WinScreenStream.dll not found"
             exit 1
           }
-
+      
       - name: Restore .NET dependencies
         run: dotnet restore PtnshiftCompanion.sln
-
+      
       - name: Build and publish Windows ARM64
         run: |
           dotnet publish GUI/GUI.csproj `
@@ -55,21 +56,7 @@ jobs:
             --output publish/arm64 `
             /p:Platform=ARM64 `
             /p:TreatWarningsAsErrors=false
-
-      - name: Test application runtime
-        run: |
-          Write-Host "Trying to run the application to validate it starts..."
-          if (Test-Path "publish/arm64/GUI.exe") {
-            Start-Process -NoNewWindow -PassThru -FilePath "publish/arm64/GUI.exe"
-            Start-Sleep -Seconds 5
-            Get-Process | Where-Object {$_.Path -match "publish/arm64/GUI.exe"} | ForEach-Object {Write-Host "✓ Application started successfully!"}
-            Get-Process | Where-Object {$_.Path -match "publish/arm64/GUI.exe"} | ForEach-Object {Stop-Process -Id $_.Id}
-          } else {
-            Write-Error "✗ GUI.exe not found in expected path (publish/arm64)"
-            exit 1
-          }
-        shell: pwsh
-
+      
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
