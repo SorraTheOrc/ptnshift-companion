@@ -8,13 +8,13 @@ on:
 
 jobs:
   build:
-    runs-on:  windows-latest
+    runs-on: windows-latest
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Setup . NET
+      - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.0.x'
@@ -22,30 +22,39 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
       
-      - name:  Build native WinScreenStream DLL (ARM64)
-        run: msbuild WinScreenStream/WinScreenStream.vcxproj -p:Configuration=Release -p:Platform=ARM64
-        
+      - name: Build native WinScreenStream DLL (ARM64)
+        run: |
+          msbuild WinScreenStream/WinScreenStream.vcxproj `
+            -p:Configuration=Release `
+            -p:Platform=ARM64
+
+      - name: Debug Build Directory
+        run: |
+          Write-Host "Debugging the build directory..."
+          dir WinScreenStream/ARM64
+          dir WinScreenStream/ARM64/Release
+      
       - name: Verify DLL was built
-        run:  |
-          if (Test-Path "WinScreenStream/ARM64/Release/WinScreenStream. dll") {
+        run: |
+          if (Test-Path "WinScreenStream/ARM64/Release/WinScreenStream.dll") {
             Write-Host "✓ WinScreenStream.dll built successfully"
           } else {
-            Write-Error "✗ WinScreenStream. dll not found"
+            Write-Error "✗ WinScreenStream.dll not found"
             exit 1
           }
       
       - name: Restore .NET dependencies
         run: dotnet restore PtnshiftCompanion.sln
       
-      - name:  Build and publish Windows ARM64
+      - name: Build and publish Windows ARM64
         run: |
           dotnet publish GUI/GUI.csproj `
-            --configuration "Release Windows" `
+            --configuration Release `
             --framework net9.0 `
             --runtime win-arm64 `
             --self-contained true `
             --output publish/arm64 `
-            -p:Platform=arm64 `
+            /p:Platform=ARM64 `
             /p:TreatWarningsAsErrors=false
       
       - name: Upload artifact
