@@ -8,7 +8,7 @@ While the primary purpose of this app is to move the PTNSHIFT UI to a Push devic
 
 ## Binaries
 
-For convenience, builds are available at https://bergius.org/ptnshift.
+For convenience, builds are available at https://bergius.org/ptnshift (direct download for Windows and macOS).
 
 ## Building
 
