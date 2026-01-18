@@ -4,7 +4,7 @@ on:
   push: 
     branches: 
       - main
-  workflow_dispatch:
+  workflow_dispatch: 
 
 jobs:
   build:
@@ -25,19 +25,19 @@ jobs:
       - name:  Build native WinScreenStream DLL (ARM64)
         run: msbuild WinScreenStream/WinScreenStream.vcxproj -p:Configuration=Release -p:Platform=ARM64
         
-      - name:  Verify DLL was built
-        run: |
-          if (Test-Path "WinScreenStream/ARM64/Release/WinScreenStream.dll") {
+      - name: Verify DLL was built
+        run:  |
+          if (Test-Path "WinScreenStream/ARM64/Release/WinScreenStream. dll") {
             Write-Host "✓ WinScreenStream.dll built successfully"
           } else {
-            Write-Error "✗ WinScreenStream.dll not found"
+            Write-Error "✗ WinScreenStream. dll not found"
             exit 1
           }
       
       - name: Restore .NET dependencies
-        run: dotnet restore PtnshiftCompanion. sln
+        run: dotnet restore PtnshiftCompanion.sln
       
-      - name: Build and publish Windows ARM64
+      - name:  Build and publish Windows ARM64
         run: |
           dotnet publish GUI/GUI.csproj `
             --configuration "Release Windows" `
@@ -48,7 +48,7 @@ jobs:
             -p:Platform=arm64 `
             /p:TreatWarningsAsErrors=false
       
-      - name:  Upload artifact
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ptnshift-companion-windows-arm64
