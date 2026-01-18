@@ -14,7 +14,7 @@ For convenience, builds are available at https://bergius.org/ptnshift (direct do
 
 ### Windows
 
-1. Install the .NET SDK (the project targets .NET 9.0) and the Visual Studio Build Tools (for the native `WinScreenStream` library).
+1. Install the [.NET SDK 9.0](https://dotnet.microsoft.com/en-us/download) and the [Visual Studio Build Tools](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio) (for the native `WinScreenStream` library).
 2. From PowerShell in the repo root, run:
    ```
    .\build-win.ps1
