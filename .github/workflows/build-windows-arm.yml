@@ -1,6 +1,6 @@
 name: Build Windows ARM64
 
-on: 
+on:
   push:
     branches: 
       - main
@@ -14,17 +14,31 @@ jobs:
       - name: Checkout code
         uses:  actions/checkout@v4
       
-      - name: Setup .NET
+      - name: Setup . NET
         uses: actions/setup-dotnet@v4
-        with:
+        with: 
           dotnet-version: '9.0.x'
       
-      - name:  Restore dependencies
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+      
+      - name:  Build native WinScreenStream DLL (ARM64)
+        run: msbuild WinScreenStream. sln -p:Configuration=Release -p:Platform=ARM64
+        
+      - name:  Verify DLL was built
+        run:  |
+          if (Test-Path "WinScreenStream/ARM64/Release/WinScreenStream.dll") {
+            Write-Host "✓ WinScreenStream.dll built successfully"
+          } else {
+            Write-Error "✗ WinScreenStream.dll not found"
+            exit 1
+          }
+      
+      - name:  Restore . NET dependencies
         run: dotnet restore PtnshiftCompanion.sln
       
-      - name:  Build Windows ARM64 using publish script
+      - name: Build and publish Windows ARM64
         run: |
-          # Run only the ARM64 portion of the publish script
           dotnet publish GUI/GUI.csproj `
             --configuration "Release Windows" `
             --framework net9.0 `
