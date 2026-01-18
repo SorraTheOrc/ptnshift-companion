@@ -10,6 +10,8 @@ public record CaptureConfiguration(
     int Height,
     int FrameRate)
 {
+    public CaptureDimensions CaptureDimensions { get; init; } = CaptureDimensionPresets.Default;
+
     private bool TryGetFirstValid(
         IReadOnlyCollection<DisplayInfo> availableDisplays,
         [NotNullWhen(true)] out CaptureConfiguration? configuration)
@@ -42,8 +44,8 @@ public record CaptureConfiguration(
         }
 
         var scalingFactor = display.ScalingFactor;
-        var effectiveWidth = (int) (960 * scalingFactor + 0.5);
-        var effectiveHeight = (int) (161 * scalingFactor + 0.5);
+        var effectiveWidth = (int) (CaptureDimensions.Width * scalingFactor + 0.5);
+        var effectiveHeight = (int) (CaptureDimensions.CaptureHeight * scalingFactor + 0.5);
         var maxX = Math.Max(0, display.Width - effectiveWidth);
         var maxY = Math.Max(0, display.Height - effectiveHeight);
 

@@ -24,7 +24,8 @@
             <Grid>
                 <Image Source="{Binding ImageSource}"
                     Name="PreviewImage"
-                    Width="960" Height="160"
+                    Width="{Binding VisibleCaptureWidth}"
+                    Height="{Binding VisibleCaptureHeight}"
                     HorizontalAlignment="Left"
                     VerticalAlignment="Top"
                     Stretch="UniformToFill" />
@@ -45,7 +46,7 @@
             </Grid>
             <Grid
                 RowDefinitions="Auto, Auto"
-                ColumnDefinitions="Auto, Auto, Auto, Auto, Auto"
+                ColumnDefinitions="Auto, Auto, Auto, Auto, Auto, Auto"
                 Margin="12">
 
                 <Grid.Styles>
@@ -109,6 +110,13 @@
                     Text="Capture FPS" />
                 <TextBox Grid.Row="1" Grid.Column="4"
                     Text="{Binding CaptureFrameRate}" />
+
+                <TextBlock Grid.Row="0" Grid.Column="5"
+                    Text="Size" />
+                <ComboBox Grid.Row="1" Grid.Column="5"
+                    ItemsSource="{Binding CaptureDimensionOptions}"
+                    SelectedItem="{Binding SelectedCaptureDimensions}"
+                    Width="120" />
             </Grid>
 
             <Grid

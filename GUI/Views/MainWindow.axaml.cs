@@ -122,6 +122,7 @@ public partial class MainWindow : Window
             DisplayService.GetDisplay(cfg.DisplayId)
             ?? throw new InvalidOperationException("Display not selected");
 
+        var dims = ViewModel.CaptureConfiguration;
         // Make the drag overlay at the current capture location (minus border, plus discarded first row)
         var dragWindowLeft = SelectedDisplay.BoundsX + cfg.CaptureX - Scaled(3);
         var dragWindowTop = SelectedDisplay.BoundsY + cfg.CaptureY - Scaled(3 - 1);
@@ -129,8 +130,8 @@ public partial class MainWindow : Window
         DragOutline?.Close();
         DragOutline = new()
         {
-            Width = 960 + 6,
-            Height = 160 + 6,
+            Width = dims.Width + 6,
+            Height = (dims.Height - 1) + 6,
             Position = new(dragWindowLeft, dragWindowTop)
         };
         DragOutline.Show();

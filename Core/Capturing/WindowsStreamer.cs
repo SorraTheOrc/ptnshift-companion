@@ -19,6 +19,9 @@ public class WindowsStreamer(
     private int Y { get; set; }
     private int EffectiveWidth { get; set; }
     private int EffectiveHeight { get; set; }
+    private int TargetWidth { get; set; } = CaptureDimensionPresets.Default.Width;
+    private int TargetHeight { get; set; } = CaptureDimensionPresets.Default.CaptureHeight;
+    private double LastScalingFactor { get; set; } = 1;
     private long LastFullScreenTimestamp { get; set; }
 
     private IDisplayService DisplayService { get; } = displayService;
@@ -63,6 +66,9 @@ public class WindowsStreamer(
         Y = y;
         EffectiveWidth = width;
         EffectiveHeight = height;
+        LastScalingFactor = display.ScalingFactor;
+        TargetWidth = (int) (width / LastScalingFactor + 0.5);
+        TargetHeight = (int) (height / LastScalingFactor + 0.5);
 
         CaptureCallback = OnFrame;
 
@@ -86,6 +92,8 @@ public class WindowsStreamer(
         Y = y;
         EffectiveWidth = width;
         EffectiveHeight = height;
+        TargetWidth = (int) (width / LastScalingFactor + 0.5);
+        TargetHeight = (int) (height / LastScalingFactor + 0.5);
     }
 
     public async Task StopAsync()
@@ -150,8 +158,8 @@ public class WindowsStreamer(
         var rowSize = EffectiveWidth * 3;
         var bufferSize = rowSize * EffectiveHeight;
         var buffer = ArrayPool<byte>.Shared.Rent(bufferSize);
-        const int ResizeBufferSize = 960 * 161 * 3;
-        var resizeBuffer = ArrayPool<byte>.Shared.Rent(ResizeBufferSize);
+        var resizeBufferSize = TargetWidth * TargetHeight * 3;
+        var resizeBuffer = ArrayPool<byte>.Shared.Rent(resizeBufferSize);
         try
         {
             for (var row = 0; row < EffectiveHeight; row++)
@@ -165,7 +173,7 @@ public class WindowsStreamer(
                 Marshal.Copy(IntPtr.Add(data, srcOffset), buffer, dstOffset, rowSize);
             }
 
-            if (EffectiveWidth == 960 && EffectiveHeight == 161)
+            if (EffectiveWidth == TargetWidth && EffectiveHeight == TargetHeight)
             {
                 (buffer, resizeBuffer) = (resizeBuffer, buffer);
             }
@@ -173,10 +181,10 @@ public class WindowsStreamer(
             {
                 ImageConverter.ScaleCpu(
                     buffer, EffectiveWidth, EffectiveHeight,
-                    resizeBuffer, 960, 161);
+                    resizeBuffer, TargetWidth, TargetHeight);
             }
 
-            EventSource.InvokeFrameCaptured(FrameCaptureType.Region, resizeBuffer.AsSpan(0, ResizeBufferSize));
+            EventSource.InvokeFrameCaptured(FrameCaptureType.Region, resizeBuffer.AsSpan(0, resizeBufferSize));
         }
         finally
         {

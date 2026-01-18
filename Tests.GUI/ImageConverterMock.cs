@@ -1,3 +1,4 @@
+using Core.Capturing;
 using Core.Image;
 using SkiaSharp;
 
@@ -8,15 +9,15 @@ public class ImageConverterMock : IImageConverter
     public byte[] Input { get; set; } = null!;
     public byte[] ExpectedOutput { get; set; } = null!;
 
-    public void ConvertBgra32ToRgb16(ReadOnlySpan<byte> bgraBytes, Memory<byte> rgb16Bytes)
+    public void ConvertBgra32ToRgb16(ReadOnlySpan<byte> bgraBytes, Memory<byte> rgb16Bytes, int width = CaptureDimensionPresets.DefaultWidth, int height = CaptureDimensionPresets.DefaultVisibleHeight)
     {
         Input = bgraBytes.ToArray();
         ExpectedOutput.CopyTo(rgb16Bytes);
     }
 
-    public void ConvertRgb24ToRgb16(ReadOnlySpan<byte> bgraBytes, Memory<byte> rgb16Bytes)
+    public void ConvertRgb24ToRgb16(ReadOnlySpan<byte> bgraBytes, Memory<byte> rgb16Bytes, int width = CaptureDimensionPresets.DefaultWidth, int height = CaptureDimensionPresets.DefaultVisibleHeight)
     {
-        ConvertBgra32ToRgb16(bgraBytes, rgb16Bytes);
+        ConvertBgra32ToRgb16(bgraBytes, rgb16Bytes, width, height);
     }
 
     public SKData ConvertToData(

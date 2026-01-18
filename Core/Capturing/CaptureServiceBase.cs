@@ -74,6 +74,9 @@ public abstract class CaptureServiceBase : ICaptureService
             });
         }
 
+        DiagnosticOutputRenderer.ResizeOverlay(
+            CurrentConfiguration.CaptureDimensions.Width,
+            CurrentConfiguration.CaptureDimensions.VisibleHeight);
         Logger.LogInformation("Configuration set");
     }
 
