@@ -1,7 +1,7 @@
 name: Build Windows ARM64
 
 on:
-  push:
+  push: 
     branches: 
       - main
   workflow_dispatch:
@@ -12,21 +12,21 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses:  actions/checkout@v4
+        uses: actions/checkout@v4
       
       - name: Setup . NET
         uses: actions/setup-dotnet@v4
         with: 
           dotnet-version: '9.0.x'
       
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
+      - name:  Setup MSBuild
+        uses:  microsoft/setup-msbuild@v2
       
-      - name:  Build native WinScreenStream DLL (ARM64)
-        run: msbuild WinScreenStream. sln -p:Configuration=Release -p:Platform=ARM64
+      - name: Build native WinScreenStream DLL (ARM64)
+        run: msbuild WinScreenStream.sln -p:Configuration=Release -p:Platform=ARM64
         
       - name:  Verify DLL was built
-        run:  |
+        run: |
           if (Test-Path "WinScreenStream/ARM64/Release/WinScreenStream.dll") {
             Write-Host "✓ WinScreenStream.dll built successfully"
           } else {
@@ -34,8 +34,8 @@ jobs:
             exit 1
           }
       
-      - name:  Restore . NET dependencies
-        run: dotnet restore PtnshiftCompanion.sln
+      - name: Restore .NET dependencies
+        run: dotnet restore PtnshiftCompanion. sln
       
       - name: Build and publish Windows ARM64
         run: |
@@ -49,7 +49,7 @@ jobs:
             /p:TreatWarningsAsErrors=false
       
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses:  actions/upload-artifact@v4
         with: 
           name: ptnshift-companion-windows-arm64
           path: publish/arm64/
